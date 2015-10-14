@@ -12,7 +12,7 @@ namespace Switchboard.ConsoleHost
         static void Main(string[] args)
         {
             var traceFilename = String.Format("outputoutput{0}.txt", DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss"));
-            Trace.Listeners.Add(new TextWriterLogger(File.Create(traceFilename)));
+            Trace.Listeners.Add(new TextWriterLogger(File.Create(traceFilename), new object()));
 
             // Dump all debug data to the console, coloring it if possible
             Trace.Listeners.Add(new ConsoleLogger());

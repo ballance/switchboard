@@ -5,13 +5,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         DataContext="{Binding Main, Mode=OneWay, Source={StaticResource Locator}}"
-        Title="Local Services Monitor" Height="350" Width="525">
+        Title="Local Services Monitor" Height="600" Width="800">
     <Grid>
         <StackPanel>
-            <TextBlock Name="TestUrl" Padding="5" Text="{Binding TestUrl, Mode=OneWay}"/>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="5" />
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Grid.Row="1" Name="TestUrl" Padding="5" Width="400" Text="{Binding TestUrl, Mode=OneWay}"/>
+                <Button Grid.Column="1" Grid.Row="1" Command="{Binding StartCommand}" Width="50" Content="Start" Visibility="{Binding Running, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                <Button Grid.Column="2" Grid.Row="1" Command="{Binding StopCommand}"  Width="50" Content="Stop" Visibility="{Binding Running, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </Grid>
             <Rectangle Fill="Orange" Width="Auto" Height="2"></Rectangle>
-            <ScrollViewer HorizontalScrollBarVisibility="Auto">
-                <TextBlock Name="StatusDisplay" Text="{Binding Status, Mode=OneWay}" Padding="5" Height="Auto" />
+            <ScrollViewer VerticalScrollBarVisibility="Visible"  CanContentScroll="True" >
+                <TextBlock Name="StatusDisplay" Text="{Binding Status, Mode=OneWay}" Padding="5" Height="500" />
             </ScrollViewer>
         </StackPanel>
     </Grid>
