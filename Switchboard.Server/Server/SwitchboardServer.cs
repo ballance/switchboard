@@ -28,6 +28,11 @@ namespace Switchboard.Server
             this.workTask = Run(CancellationToken.None);
         }
 
+        public void Stop()
+        {
+            this.server.Stop();
+        }
+
         private async Task Run(CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)

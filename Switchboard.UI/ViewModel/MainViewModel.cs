@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight.Command;
 using Switchboard.ConsoleHost;
 using Switchboard.ConsoleHost.Logging;
 using Switchboard.Server;
@@ -18,11 +19,48 @@ namespace Switchboard.UI.ViewModel
         private string _currentCall;
         private string _testUrl;
         private const string testUrlTarget = "http://www.road.is/travel-info/road-conditions-and-weather/the-entire-country/island1e.html";
+        private CancellationTokenSource tokenSource;
+        public RelayCommand StartCommand { get; private set; }
+        public RelayCommand StopCommand { get; private set; }
+        private bool _running;
+        private object _synco = new object();
+
 
         public MainViewModel()
         {
             Status = "Loading...";
-            Initialize();
+            this.StartCommand = new RelayCommand(Start);
+            this.StopCommand = new RelayCommand(Stop);
+            _running = false;
+
+        }
+
+        private void Stop()
+        {
+            tokenSource.Cancel();
+            _running = false;
+            TestUrl = string.Empty;
+
+            RaisePropertyChanged("Running");
+        }
+
+        public bool Running
+        {
+            get { return _running; }
+            set
+            {
+                if (_running == value)
+                    return;
+                _running = value;
+            }
+        }
+
+        private void Start()
+        {
+            tokenSource = new CancellationTokenSource();
+            Initialize(tokenSource.Token);
+            _running = true;
+            RaisePropertyChanged("Running");
         }
 
         public string CurrentCall
@@ -64,45 +102,74 @@ namespace Switchboard.UI.ViewModel
             }
         }
 
-        public void Initialize()
+        public void Initialize(CancellationToken token)
         {
             Task.Run(() =>
             {
-                Status = "Loading 2...";
-                RunInitialize();
-            });
+                Status = "Ready.";
+                RunInitialize(token);
+            }, token);
         }
 
-        public async void RunInitialize()
+        public async void RunInitialize(CancellationToken token)
         {
             try
             {
                 var traceFilename = String.Format("outputoutput{0}.txt", DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss"));
-                Trace.Listeners.Add(new TextWriterLogger(File.Create(traceFilename)));
+                Trace.Listeners.Add(new TextWriterLogger(File.Create(traceFilename),_synco));
                 var textStream = new MemoryStream();
-                Trace.Listeners.Add(new TextWriterLogger(textStream));
+                Trace.Listeners.Add(new TextWriterLogger(textStream, _synco));
 
                 var endPoint = new IPEndPoint(IPAddress.Loopback, 8080);
                 var handler = new SimpleReverseProxyHandler(testUrlTarget);
                 var server = new SwitchboardServer(endPoint, handler);
 
                 server.Start();
-
+                //long lastPosition = -1;
                 TestUrl = String.Format("Point your browser at http://{0}:{1}", endPoint.Address, endPoint.Port);
-                for (int i = 0; i < 1000; i++)
+                while (true)
                 {
-                    var currentMemStream = textStream.Position;
-                    Status = String.Format("Current Stream position {0} at {1} .{2}", currentMemStream, System.DateTime.Now.ToLongTimeString(), System.Environment.NewLine);
-                    await Task.Delay(500);
-                }
+                    lock (_synco)
+                    {
+                        textStream.Position = 0;
+                        //if (textStream.Position > lastPosition)
+                        //{
+                        var sr = new StreamReader(textStream); //new StreamReader(copyStream);
 
+
+                        var currentMemStream = sr.ReadToEnd();
+
+                        if (currentMemStream.Length > 0)
+                        {
+                            //lastPosition = textStream.Position;
+                            Status = currentMemStream;
+                            //String.Format("{0}: {1}.{2}", currentMemStream, System.DateTime.Now.ToLongTimeString(), System.Environment.NewLine);
+                        }
+                        //}
+                        // await Task.Delay(10);
+                        if (token.IsCancellationRequested)
+                        {
+                            server.Start();
+                            break;
+                        }
+                    }
+                }
             }
+
             catch (Exception exception)
             {
                 Status = String.Format("Failed to load. {0}", exception);
             }
         }
 
-
+        public static void CopyStream(Stream input, Stream output)
+        {
+            byte[] buffer = new byte[32768];
+            int read;
+            while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                output.Write(buffer, 0, read);
+            }
+        }
     }
 }

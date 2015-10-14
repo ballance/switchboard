@@ -8,13 +8,14 @@ namespace Switchboard.ConsoleHost.Logging
 {
     public class TextWriterLogger : TextWriterTraceListener
     {
-        private readonly object syncRoot = new object();
+        private readonly object syncRoot;// = new object();
         private static Regex ipPortRe = new Regex(@"(?:[0-9]{1,3}\.){3}[0-9]{1,3}:\d{1,5}");
         private static TextWriter output = Console.Out;
 
         private Stream _outputTarget;
-        public TextWriterLogger(Stream outputStream = null) : base(outputStream)
+        public TextWriterLogger(Stream outputStream, object synco) : base(outputStream)
         {
+            syncRoot = synco;
         }
 
         public override void Write(string message)
