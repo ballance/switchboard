@@ -28,32 +28,6 @@ namespace Switchboard.UI
         public MainWindow()
         {
             InitializeComponent();
-            Startup();
-        }
-
-        public void Startup()
-        {
-            StatusLabel.Text = "Ready.";
-
-            try
-            {
-                Trace.Listeners.Add(new ConsoleLogger());
-
-                var endPoint = new IPEndPoint(IPAddress.Loopback, 8080);
-                var handler = new SimpleReverseProxyHandler("http://google.com");
-                var server = new SwitchboardServer(endPoint, handler);
-
-                server.Start();
-
-                StatusDisplay.Text = String.Format("Point your browser at http://{0}:{1}", endPoint.Address, endPoint.Port);
-
-                //            Console.ReadLine();
-
-            }
-            catch (Exception exception)
-            {
-                StatusLabel.Text = String.Format("Failed to load. {0}", exception);
-            }
         }
     }
 }
