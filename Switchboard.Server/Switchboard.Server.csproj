@@ -59,6 +59,7 @@
     <Compile Include="Request\SwitchboardRequest.cs" />
     <Compile Include="Handlers\ISwitchboardRequestHandler.cs" />
     <Compile Include="Server\SwitchboardServer.cs" />
+    <Compile Include="Handlers\SimpleReverseProxyHandler.cs" />
     <Compile Include="Utils\ChunkedStream.cs" />
     <Compile Include="Utils\HttpParser\HttpResponseParser.cs" />
     <Compile Include="Utils\HttpParser\IHttpResponseHandler.cs" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using Switchboard.ConsoleHost.Logging;
 using Switchboard.Server;
@@ -10,11 +11,14 @@ namespace Switchboard.ConsoleHost
     {
         static void Main(string[] args)
         {
+            var traceFilename = String.Format("outputoutput{0}.txt", DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss"));
+            Trace.Listeners.Add(new TextWriterLogger(File.Create(traceFilename)));
+
             // Dump all debug data to the console, coloring it if possible
             Trace.Listeners.Add(new ConsoleLogger());
 
             var endPoint = new IPEndPoint(IPAddress.Loopback, 8080);
-            var handler = new SimpleReverseProxyHandler("http://www.nytimes.com");
+            var handler = new SimpleReverseProxyHandler("http://www.road.is/travel-info/road-conditions-and-weather/the-entire-country/island1e.html");
             var server = new SwitchboardServer(endPoint, handler);
 
             server.Start();
