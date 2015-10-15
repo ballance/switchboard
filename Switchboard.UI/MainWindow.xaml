@@ -24,9 +24,16 @@
                 <Button Grid.Column="2" Grid.Row="1" Command="{Binding StopCommand}"  Width="50" Content="Stop" Visibility="{Binding Running, Converter={StaticResource BooleanToVisibilityConverter}}" />
             </Grid>
             <Rectangle Fill="Orange" Width="Auto" Height="2"></Rectangle>
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" >
-                <TextBlock Name="StatusDisplay" Text="{Binding Status, Mode=OneWay}" Padding="5" Height="Auto" />
-            </ScrollViewer>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="200" />
+                </Grid.ColumnDefinitions>
+                <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto" >
+                    <TextBlock Name="StatusDisplay" Text="{Binding Status, Mode=OneWay}" Padding="5" Height="Auto" />
+                </ScrollViewer>
+                <TextBlock Grid.Column="1" Name="CurrentTransferredBytes"  Text="{Binding CurrentTransferredBytes, Mode=OneWay}" />
+            </Grid>
         </StackPanel>
     </Grid>
 </Window>

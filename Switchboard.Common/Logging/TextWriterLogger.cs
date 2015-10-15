@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.Remoting.Channels;
 using System.Text.RegularExpressions;
 
-namespace Switchboard.ConsoleHost.Logging
+namespace Switchboard.Common.Logging
 {
     public class TextWriterLogger : TextWriterTraceListener
     {

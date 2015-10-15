@@ -15,7 +15,7 @@ namespace Switchboard.Server.Connection
     public class InboundConnection : SwitchboardConnection
     {
         private static long connectionCounter;
-        protected static readonly Encoding headerEncoding = Encoding.UTF8; //.GetEncoding("us-ascii");
+        protected static readonly Encoding headerEncoding = Encoding.GetEncoding("us-ascii");
         public override bool IsSecure { get { return false; } }
 
         public long ConnectionId;

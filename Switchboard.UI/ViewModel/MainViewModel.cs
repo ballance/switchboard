@@ -1,4 +1,5 @@
 using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -7,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
+using Switchboard.Common.Logging;
 using Switchboard.ConsoleHost;
 using Switchboard.ConsoleHost.Logging;
 using Switchboard.Server;
@@ -18,12 +20,13 @@ namespace Switchboard.UI.ViewModel
         private string _status;
         private string _currentCall;
         private string _testUrl;
-        private const string testUrlTarget = "http://www.road.is/travel-info/road-conditions-and-weather/the-entire-country/island1e.html";
+        //private const string testUrlTarget = "http://www.nytimes.com";
         private CancellationTokenSource tokenSource;
         public RelayCommand StartCommand { get; private set; }
         public RelayCommand StopCommand { get; private set; }
         private bool _running;
         private object _synco = new object();
+        private long _currentTransferredBytes = 0;
 
 
         public MainViewModel()
@@ -89,6 +92,19 @@ namespace Switchboard.UI.ViewModel
             }
         }
 
+        public long CurrentTransferredBytes
+        {
+            get { return _currentTransferredBytes; }
+            set
+            {
+                if (_currentTransferredBytes == value)
+                    return;
+
+                _currentTransferredBytes = value;
+                RaisePropertyChanged();
+            }
+        }
+
         public string TestUrl
         {
             get { return _testUrl; }
@@ -115,42 +131,46 @@ namespace Switchboard.UI.ViewModel
         {
             try
             {
-                var traceFilename = String.Format("outputoutput{0}.txt", DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss"));
+                var traceFilename = String.Format("logs\\outputoutput{0}.txt", DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss"));
                 Trace.Listeners.Add(new TextWriterLogger(File.Create(traceFilename),_synco));
                 var textStream = new MemoryStream();
                 Trace.Listeners.Add(new TextWriterLogger(textStream, _synco));
 
                 var endPoint = new IPEndPoint(IPAddress.Loopback, 8080);
-                var handler = new SimpleReverseProxyHandler(testUrlTarget);
+                var handler = new SimpleReverseProxyHandler(ConfigurationManager.AppSettings.Get("RemoteUrl"));
                 var server = new SwitchboardServer(endPoint, handler);
 
                 var lastStreamLength = -0L;
 
                 server.Start();
                 //long lastPosition = -1;
-                TestUrl = String.Format("Point your browser at http://{0}:{1}", endPoint.Address, endPoint.Port);
+                var previousPosition = textStream.Position;
+                TestUrl = String.Format("Intercepting at http://{0}:{1}", endPoint.Address, endPoint.Port);
                 while (true)
                 {
                     lock (_synco)
                     {
-                        textStream.Position = 0L;
-                        //if (textStream.Position > lastPosition)
-                        //{
-                        var sr = new StreamReader(textStream); //new StreamReader(copyStream);
-                        
 
+                        if (textStream.Position > previousPosition)
+                        {
+                            textStream.Position = 0L;
+                            var sr = new StreamReader(textStream); //new StreamReader(copyStream);
+                        
                             var currentMemStream = sr.ReadToEnd();
 
                             if (currentMemStream.Length > lastStreamLength)
                             {
                                 lastStreamLength = textStream.Position;
                                 Status = currentMemStream;
+                                CurrentTransferredBytes = lastStreamLength;
                                 //String.Format("{0}: {1}.{2}", currentMemStream, System.DateTime.Now.ToLongTimeString(), System.Environment.NewLine);
                             }
-                        //}
+
+                            textStream.Position = previousPosition;
+                        }
                         if (token.IsCancellationRequested)
                         {
-                            server.Start();
+                            server.Stop();
                             break;
                         }
                     }
