@@ -18,7 +18,8 @@ namespace Switchboard.UI.ViewModel
         private string _status;
         private string _currentCall;
         private string _testUrl;
-        private const string testUrlTarget = "http://www.road.is/travel-info/road-conditions-and-weather/the-entire-country/island1e.html";
+        //private const string testUrlTarget = "http://www.road.is/travel-info/road-conditions-and-weather/the-entire-country/island1e.html";
+        private const string testUrlTarget = "https://localhost:61000";
         private CancellationTokenSource tokenSource;
         public RelayCommand StartCommand { get; private set; }
         public RelayCommand StopCommand { get; private set; }
@@ -120,9 +121,11 @@ namespace Switchboard.UI.ViewModel
                 var textStream = new MemoryStream();
                 Trace.Listeners.Add(new TextWriterLogger(textStream, _synco));
 
-                var endPoint = new IPEndPoint(IPAddress.Loopback, 8080);
+                var endPoint = new IPEndPoint(IPAddress.Loopback, 61009);
                 var handler = new SimpleReverseProxyHandler(testUrlTarget);
                 var server = new SwitchboardServer(endPoint, handler);
+
+                var lastStreamLength = -0L;
 
                 server.Start();
                 //long lastPosition = -1;
@@ -131,28 +134,28 @@ namespace Switchboard.UI.ViewModel
                 {
                     lock (_synco)
                     {
-                        textStream.Position = 0;
+                        textStream.Position = 0L;
                         //if (textStream.Position > lastPosition)
                         //{
                         var sr = new StreamReader(textStream); //new StreamReader(copyStream);
+                        
 
+                            var currentMemStream = sr.ReadToEnd();
 
-                        var currentMemStream = sr.ReadToEnd();
-
-                        if (currentMemStream.Length > 0)
-                        {
-                            //lastPosition = textStream.Position;
-                            Status = currentMemStream;
-                            //String.Format("{0}: {1}.{2}", currentMemStream, System.DateTime.Now.ToLongTimeString(), System.Environment.NewLine);
-                        }
+                            if (currentMemStream.Length > lastStreamLength)
+                            {
+                                lastStreamLength = textStream.Position;
+                                Status = currentMemStream;
+                                //String.Format("{0}: {1}.{2}", currentMemStream, System.DateTime.Now.ToLongTimeString(), System.Environment.NewLine);
+                            }
                         //}
-                        // await Task.Delay(10);
                         if (token.IsCancellationRequested)
                         {
                             server.Start();
                             break;
                         }
                     }
+                    await Task.Delay(100);
                 }
             }
 

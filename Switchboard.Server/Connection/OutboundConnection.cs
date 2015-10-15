@@ -44,11 +44,6 @@ namespace Switchboard.Server.Connection
             this.networkStream = this.connection.GetStream();
         }
 
-        public Task WriteRequestAsync(SwitchboardRequest request)
-        {
-            return WriteRequestAsync(request, CancellationToken.None);
-        }
-
         public async Task WriteRequestAsync(SwitchboardRequest request, CancellationToken ct)
         {
             var writeStream = this.GetWriteStream();

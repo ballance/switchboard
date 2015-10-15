@@ -15,9 +15,11 @@ namespace Switchboard.Server
         private Task workTask;
         private bool stopping;
         private Timer connectivityTimer;
+        private CancellationTokenSource cancellationTokenSource;
 
         public SwitchboardServer(IPEndPoint listenEp, ISwitchboardRequestHandler handler)
         {
+            cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             this.server = new TcpListener(listenEp);
             this.handler = handler;
         }
@@ -25,7 +27,7 @@ namespace Switchboard.Server
         public void Start()
         {
             this.server.Start();
-            this.workTask = Run(CancellationToken.None);
+            this.workTask = Run(cancellationTokenSource.Token);
         }
 
         public void Stop()
@@ -33,20 +35,20 @@ namespace Switchboard.Server
             this.server.Stop();
         }
 
-        private async Task Run(CancellationToken ct)
+        private async Task Run(CancellationToken cancellationToken)
         {
-            while (!ct.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 var client = await this.server.AcceptTcpClientAsync();
 
                 var inbound = await CreateInboundConnection(client);
-                await inbound.OpenAsync();
+                await inbound.OpenAsync(cancellationToken);
 
                 Debug.WriteLine(string.Format("{0}: Connected", inbound.RemoteEndPoint));
 
                 var context = new SwitchboardContext(inbound);
 
-                HandleSession(context);
+                HandleSession(context, cancellationToken);
             }
         }
 
@@ -55,7 +57,7 @@ namespace Switchboard.Server
             return Task.FromResult<InboundConnection>(new InboundConnection(client));
         }
 
-        private async void HandleSession(SwitchboardContext context)
+        private async void HandleSession(SwitchboardContext context, CancellationToken cancellationToken)
         {
             try
             {
@@ -63,7 +65,7 @@ namespace Switchboard.Server
 
                 do
                 {
-                    var request = await context.InboundConnection.ReadRequestAsync().ConfigureAwait(false);
+                    var request = await context.InboundConnection.ReadRequestAsync(cancellationToken).ConfigureAwait(false);
 
                     if (request == null)
                         return;

@@ -15,7 +15,7 @@ namespace Switchboard.Server.Connection
     public class InboundConnection : SwitchboardConnection
     {
         private static long connectionCounter;
-        protected static readonly Encoding headerEncoding = Encoding.GetEncoding("us-ascii");
+        protected static readonly Encoding headerEncoding = Encoding.UTF8; //.GetEncoding("us-ascii");
         public override bool IsSecure { get { return false; } }
 
         public long ConnectionId;
@@ -35,7 +35,6 @@ namespace Switchboard.Server.Connection
                     return !(connection.Client.Poll(1, SelectMode.SelectRead) && connection.Client.Available == 0);
                 }
                 catch (SocketException) { return false; }
-                //return connection.Connected; 
             }
         }
 
@@ -47,11 +46,6 @@ namespace Switchboard.Server.Connection
             this.networkStream = connection.GetStream();
             this.ConnectionId = Interlocked.Increment(ref connectionCounter);
             this.RemoteEndPoint = (IPEndPoint)connection.Client.RemoteEndPoint;
-        }
-
-        public virtual Task OpenAsync()
-        {
-            return this.OpenAsync(CancellationToken.None);
         }
 
         public virtual Task OpenAsync(CancellationToken ct)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Switchboard.Server;
 
@@ -13,21 +14,20 @@ namespace Switchboard.ConsoleHost
     public class SimpleReverseProxyHandler : ISwitchboardRequestHandler
     {
         private Uri backendUri;
+        private CancellationTokenSource cancellationTokenSource;
 
         public bool RewriteHost { get; set; }
         public bool AddForwardedForHeader { get; set; }
 
         public SimpleReverseProxyHandler(string backendUri)
-            : this(new Uri(backendUri))
-        {
-        }
+            : this(new Uri(backendUri)) { }
 
         public SimpleReverseProxyHandler(Uri backendUri)
         {
             this.backendUri = backendUri;
-
             this.RewriteHost = true;
             this.AddForwardedForHeader = true;
+            cancellationTokenSource = new CancellationTokenSource();
         }
 
         public async Task<SwitchboardResponse> GetResponseAsync(SwitchboardContext context, SwitchboardRequest request)
@@ -63,7 +63,7 @@ namespace Switchboard.ConsoleHost
 
             Debug.WriteLine("{0}: Outbound connection established, sending request", context.InboundConnection.RemoteEndPoint);
             sw.Restart();
-            await context.OutboundConnection.WriteRequestAsync(request);
+            await context.OutboundConnection.WriteRequestAsync(request, cancellationTokenSource.Token);
             Debug.WriteLine("{0}: Handler sent request in {1}ms", context.InboundConnection.RemoteEndPoint, sw.Elapsed.TotalMilliseconds);
 
             var response = await context.OutboundConnection.ReadResponseAsync();
