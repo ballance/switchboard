@@ -18,8 +18,7 @@ namespace Switchboard.UI.ViewModel
         private string _status;
         private string _currentCall;
         private string _testUrl;
-        //private const string testUrlTarget = "http://www.road.is/travel-info/road-conditions-and-weather/the-entire-country/island1e.html";
-        private const string testUrlTarget = "https://localhost:61000";
+        private const string testUrlTarget = "http://www.road.is/travel-info/road-conditions-and-weather/the-entire-country/island1e.html";
         private CancellationTokenSource tokenSource;
         public RelayCommand StartCommand { get; private set; }
         public RelayCommand StopCommand { get; private set; }
@@ -121,7 +120,7 @@ namespace Switchboard.UI.ViewModel
                 var textStream = new MemoryStream();
                 Trace.Listeners.Add(new TextWriterLogger(textStream, _synco));
 
-                var endPoint = new IPEndPoint(IPAddress.Loopback, 61009);
+                var endPoint = new IPEndPoint(IPAddress.Loopback, 8080);
                 var handler = new SimpleReverseProxyHandler(testUrlTarget);
                 var server = new SwitchboardServer(endPoint, handler);
 
